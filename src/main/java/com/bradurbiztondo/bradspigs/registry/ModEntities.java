@@ -15,7 +15,7 @@ public final class ModEntities {
             Registries.ENTITY_TYPE,
             Identifier.of(BradsPigs.MOD_ID, "baboy"),
             FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, BaboyEntity::new)
-                    .dimensions(EntityDimensions.fixed(0.9F, 0.9F))
+                    .dimensions(EntityDimensions.fixed(1.0F, 2.0F))
                     .build()
     );
 
