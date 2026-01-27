@@ -1,6 +1,7 @@
 package com.bradurbiztondo.bradspigs;
 // practicing intellij comment
 import net.fabricmc.api.ModInitializer;
+import com.bradurbiztondo.bradspigs.registry.ModItems;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,6 +17,7 @@ public class BradsPigs implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		ModEntities.init();
+		ModItems.init();
 		FabricDefaultAttributeRegistry.register(ModEntities.BABOY, BaboyEntity.createBaboyAttributes());
 	}
 }
