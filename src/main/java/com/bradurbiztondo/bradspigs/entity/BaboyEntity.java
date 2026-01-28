@@ -5,7 +5,7 @@ import net.minecraft.entity.attribute.DefaultAttributeContainer;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.entity.mob.PathAwareEntity;
 import net.minecraft.world.World;
-
+import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.ai.goal.LookAroundGoal;
 import net.minecraft.entity.ai.goal.LookAtEntityGoal;
 import net.minecraft.entity.ai.goal.SwimGoal;
@@ -17,10 +17,13 @@ public class BaboyEntity extends PathAwareEntity {
     // how often and how high baboy jumps
     private static final float PASSIVE_JUMP_VELOCITY = 1.00F;
     private static final int PASSIVE_JUMP_COOLDOWN_MIN_TICKS = 80;
-    private static final int PASSIVE_JUMP_COOLDOWN_MAX_TICKS = 200;
+    private static final int PASSIVE_JUMP_COOLDOWN_MAX_TICKS = 200; // dont set lower than min ticks or crash
     private static final float PASSIVE_JUMP_CHANCE = 0.10F;
 
     private int passiveJumpCooldownTicks = 0;
+
+    // bro has larger capacity until fall damage cooks him
+    private static final float EXTRA_SAFE_FALL_DISTANCE = 5.0F;
 
 
     @Override
@@ -46,6 +49,15 @@ public class BaboyEntity extends PathAwareEntity {
     @Override
     protected float getJumpVelocity() {
         return PASSIVE_JUMP_VELOCITY;
+    }
+
+    // fall damage related to fall distance. handle fall damage called when dude lands. by subtracting extra safe = increase capacity to fall before damage
+    // max fall height before damage = 9 blocks, 10 blocks = damage
+
+    @Override
+    public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
+        float adjustedDistance = Math.max(0.0F, fallDistance - EXTRA_SAFE_FALL_DISTANCE);
+        return super.handleFallDamage(adjustedDistance, damageMultiplier, damageSource);
     }
 
     public BaboyEntity(EntityType<? extends PathAwareEntity> type, World world) {
