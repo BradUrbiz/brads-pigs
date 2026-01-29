@@ -12,12 +12,174 @@ import net.minecraft.entity.ai.goal.SwimGoal;
 import net.minecraft.entity.ai.goal.WanderAroundFarGoal;
 import net.minecraft.entity.player.PlayerEntity;
 
-public class BaboyEntity extends PathAwareEntity {
+import net.minecraft.advancement.criterion.Criteria;
+import net.minecraft.entity.Entity;
+import net.minecraft.entity.EntityStatuses;
+import net.minecraft.entity.JumpingMount;
+import net.minecraft.entity.LivingEntity;
+import net.minecraft.entity.Tameable;
+import net.minecraft.entity.data.DataTracker;
+import net.minecraft.entity.data.TrackedData;
+import net.minecraft.entity.data.TrackedDataHandlerRegistry;
+import net.minecraft.nbt.NbtCompound;
+import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.util.Hand;
+import net.minecraft.util.ActionResult;
+import net.minecraft.util.math.Vec2f;
+import net.minecraft.util.math.Vec3d;
+import org.jetbrains.annotations.Nullable;
+import java.util.UUID;
+
+public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMount {
+
+    // to tame baboy
+    private static final float TAME_CHANCE = 0.20F; // 20% chance to tame
+
+    @Nullable
+    private UUID ownerUuid;
+
+    private static final TrackedData<Byte> BABOY_FLAGS = DataTracker.registerData(BaboyEntity.class, TrackedDataHandlerRegistry.BYTE);
+    private static final int TAMED_FLAG = 2;
+
+    @Override
+    protected void initDataTracker(DataTracker.Builder builder) {
+        super.initDataTracker(builder);
+        builder.add(BABOY_FLAGS, (byte)0);
+    }
+
+    private boolean getBaboyFlag(int bitmask) {
+        return(this.dataTracker.get(BABOY_FLAGS) & bitmask) != 0;
+    }
+
+    private void setBaboyFlag(int bitmask, boolean flag) {
+        byte b = this.dataTracker.get(BABOY_FLAGS);
+        if(flag) {
+            this.dataTracker.set(BABOY_FLAGS, (byte)(b | bitmask));
+        } else {
+            this.dataTracker.set(BABOY_FLAGS, (byte)(b & ~bitmask));
+        }
+    }
+
+    public boolean isTame() {
+        return this.getBaboyFlag(TAMED_FLAG);
+    }
+
+    public void setTame(boolean tame) {
+        this.setBaboyFlag(TAMED_FLAG, tame);
+    }
+
+    @Nullable
+    @Override
+    public UUID getOwnerUuid() {
+        return this.ownerUuid;
+    }
+
+    public void setOwnerUuid(@Nullable UUID ownerUuid) {
+        this.ownerUuid = ownerUuid;
+    }
+
+    @Override
+    public ActionResult interactMob(PlayerEntity player, Hand hand) {
+        if (this.hasPassengers() || this.isBaby()) {
+            return super.interactMob(player, hand);
+        }
+
+        if (this.getWorld().isClient) {
+            this.putPlayerOnBack(player);
+            return ActionResult.CONSUME;
+        }
+
+        this.putPlayerOnBack(player);
+
+        if (!this.isTame()) {
+            if (this.random.nextFloat() < TAME_CHANCE) {
+                this.bondWithPlayer(player);
+            } else {
+                this.getWorld().sendEntityStatus(this, EntityStatuses.ADD_NEGATIVE_PLAYER_REACTION_PARTICLES);
+                player.stopRiding();
+            }
+        }
+
+        return ActionResult.SUCCESS;
+    }
+
+    private void putPlayerOnBack(PlayerEntity player) {
+        if (!this.getWorld().isClient) {
+            player.setYaw(this.getYaw());
+            player.setPitch(this.getPitch());
+            player.startRiding(this);
+        }
+    }
+
+    private void bondWithPlayer(PlayerEntity player) {
+        this.setOwnerUuid(player.getUuid());
+        this.setTame(true);
+        // Not triggering TAME_ANIMAL because BaboyEntity isn't an AnimalEntity.
+        this.getWorld().sendEntityStatus(this, EntityStatuses.ADD_POSITIVE_PLAYER_REACTION_PARTICLES);
+    }
+
+    @Override
+    public void writeCustomDataToNbt(NbtCompound nbt) {
+        super.writeCustomDataToNbt(nbt);
+        nbt.putBoolean("Tame", this.isTame());
+        if (this.ownerUuid != null) {
+            nbt.putUuid("Owner", this.ownerUuid);
+        }
+    }
+
+    @Override
+    public void readCustomDataFromNbt(NbtCompound nbt) {
+        super.readCustomDataFromNbt(nbt);
+        this.setTame(nbt.getBoolean("Tame"));
+        if (nbt.containsUuid("Owner")) {
+            this.ownerUuid = nbt.getUuid("Owner");
+        }
+    }
+
+    @Override
+    protected boolean canAddPassenger(Entity passenger) {
+        return !this.hasPassengers() && passenger instanceof PlayerEntity;
+    }
+
+    @Nullable
+    @Override
+    public LivingEntity getControllingPassenger() {
+        return this.isTame() && this.getFirstPassenger() instanceof PlayerEntity player ? player : null;
+    }
+
+    @Override
+    protected void tickControlled(PlayerEntity controllingPlayer, Vec3d movementInput) {
+        super.tickControlled(controllingPlayer, movementInput);
+        Vec2f vec2f = this.getControlledRotation(controllingPlayer);
+        this.setRotation(vec2f.y, vec2f.x);
+        this.prevYaw = this.bodyYaw = this.headYaw = this.getYaw();
+
+        // Jumping is handled via JumpingMount callbacks.
+    }
+
+    protected Vec2f getControlledRotation(LivingEntity controllingPassenger) {
+        return new Vec2f(controllingPassenger.getPitch() * 0.5F, controllingPassenger.getYaw());
+    }
+
+    @Override
+    protected Vec3d getControlledMovementInput(PlayerEntity controllingPlayer, Vec3d movementInput) {
+        float f = controllingPlayer.sidewaysSpeed * 0.5F;
+        float g = controllingPlayer.forwardSpeed;
+        if (g <= 0.0F) {
+            g *= 0.25F;
+        }
+        return new Vec3d(f, 0.0, g);
+    }
+
+    @Override
+    protected float getSaddledSpeed(PlayerEntity controllingPlayer) {
+        return (float)this.getAttributeValue(EntityAttributes.GENERIC_MOVEMENT_SPEED);
+    }
 
     // how often and how high baboy jumps
     private static final float PASSIVE_JUMP_VELOCITY = 1.00F;
     private static final int PASSIVE_JUMP_COOLDOWN_MIN_TICKS = 80;
-    private static final int PASSIVE_JUMP_COOLDOWN_MAX_TICKS = 200; // dont set lower than min ticks or crash
+    private static final int PASSIVE_JUMP_COOLDOWN_MAX_TICKS = 200; // don't set lower than min ticks or crash
     private static final float PASSIVE_JUMP_CHANCE = 0.10F;
 
     private int passiveJumpCooldownTicks = 0;
@@ -57,7 +219,40 @@ public class BaboyEntity extends PathAwareEntity {
     @Override
     public boolean handleFallDamage(float fallDistance, float damageMultiplier, DamageSource damageSource) {
         float adjustedDistance = Math.max(0.0F, fallDistance - EXTRA_SAFE_FALL_DISTANCE);
-        return super.handleFallDamage(adjustedDistance, damageMultiplier, damageSource);
+        int damage = this.computeFallDamage(adjustedDistance, damageMultiplier);
+        if (damage <= 0) {
+            return false;
+        }
+
+        this.damage(damageSource, damage);
+        if (this.hasPassengers()) {
+            for (Entity entity : this.getPassengersDeep()) {
+                entity.damage(damageSource, damage);
+            }
+        }
+
+        this.playBlockFallSound();
+        return true;
+    }
+
+    @Override
+    public void setJumpStrength(int strength) {
+        if (strength > 0 && this.isOnGround()) {
+            this.jump(); // fixed jump height
+        }
+    }
+
+    @Override
+    public boolean canJump() {
+        return this.isTame();
+    }
+
+    @Override
+    public void startJumping(int height) {
+    }
+
+    @Override
+    public void stopJumping() {
     }
 
     public BaboyEntity(EntityType<? extends PathAwareEntity> type, World world) {
