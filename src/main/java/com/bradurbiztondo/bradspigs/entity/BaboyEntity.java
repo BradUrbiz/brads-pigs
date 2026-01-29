@@ -47,25 +47,17 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
         builder.add(BABOY_FLAGS, (byte)0);
     }
 
-    private boolean getBaboyFlag(int bitmask) {
-        return(this.dataTracker.get(BABOY_FLAGS) & bitmask) != 0;
-    }
-
-    private void setBaboyFlag(int bitmask, boolean flag) {
-        byte b = this.dataTracker.get(BABOY_FLAGS);
-        if(flag) {
-            this.dataTracker.set(BABOY_FLAGS, (byte)(b | bitmask));
-        } else {
-            this.dataTracker.set(BABOY_FLAGS, (byte)(b & ~bitmask));
-        }
-    }
-
     public boolean isTame() {
-        return this.getBaboyFlag(TAMED_FLAG);
+        return (this.dataTracker.get(BABOY_FLAGS) & TAMED_FLAG) != 0;
     }
 
     public void setTame(boolean tame) {
-        this.setBaboyFlag(TAMED_FLAG, tame);
+        byte b = this.dataTracker.get(BABOY_FLAGS);
+        if (tame) {
+            this.dataTracker.set(BABOY_FLAGS, (byte)(b | TAMED_FLAG));
+        } else {
+            this.dataTracker.set(BABOY_FLAGS, (byte)(b & ~TAMED_FLAG));
+        }
     }
 
     @Nullable
