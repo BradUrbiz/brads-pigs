@@ -182,7 +182,12 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     private static final int PASSIVE_JUMP_COOLDOWN_MAX_TICKS = 200; // don't set lower than min ticks or crash
     private static final float PASSIVE_JUMP_CHANCE = 0.10F;
 
+    private static final float RIDER_JUMP_MIN_VELOCITY = 0.30F;
+    private static final float RIDER_JUMP_MAX_VELOCITY = 1.00F;
+
     private int passiveJumpCooldownTicks = 0;
+    private boolean usingRiderJump = false;
+    private float riderJumpPower = 0.0F;
 
     // bro has larger capacity until fall damage cooks him
     private static final float EXTRA_SAFE_FALL_DISTANCE = 5.0F;
@@ -210,6 +215,10 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
 
     @Override
     protected float getJumpVelocity() {
+        if (usingRiderJump) {
+            float clamped = Math.max(0.0F, Math.min(1.0F, riderJumpPower));
+            return RIDER_JUMP_MIN_VELOCITY + (RIDER_JUMP_MAX_VELOCITY - RIDER_JUMP_MIN_VELOCITY) * clamped;
+        }
         return PASSIVE_JUMP_VELOCITY;
     }
 
@@ -238,10 +247,12 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     @Override
     public void setJumpStrength(int strength) {
         if (strength > 0 && this.isOnGround()) {
-            this.jump(); // fixed jump height
+            this.riderJumpPower = strength / 100.0F;
+            this.usingRiderJump = true;
+            this.jump();
+            this.usingRiderJump = false;
         }
     }
-
     @Override
     public boolean canJump() {
         return this.isTame();
