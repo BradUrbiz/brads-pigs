@@ -29,6 +29,12 @@ import net.minecraft.util.math.Vec2f;
 import net.minecraft.util.math.Vec3d;
 import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
+// tnt throw hopefully
+import net.minecraft.entity.EquipmentSlot;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
+import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtOps;
 
 public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMount {
 
@@ -41,10 +47,15 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     private static final TrackedData<Byte> BABOY_FLAGS = DataTracker.registerData(BaboyEntity.class, TrackedDataHandlerRegistry.BYTE);
     private static final int TAMED_FLAG = 2;
 
+    // see item held
+    private static final TrackedData<ItemStack> BABOY_HELD_ITEM = DataTracker.registerData(BaboyEntity.class, TrackedDataHandlerRegistry.ITEM_STACK);
+
+
     @Override
     protected void initDataTracker(DataTracker.Builder builder) {
         super.initDataTracker(builder);
         builder.add(BABOY_FLAGS, (byte)0);
+        builder.add(BABOY_HELD_ITEM, ItemStack.EMPTY);
     }
 
     public boolean isTame() {
@@ -72,6 +83,22 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
 
     @Override
     public ActionResult interactMob(PlayerEntity player, Hand hand) {
+
+        ItemStack heldStack = player.getStackInHand(hand);
+        if (heldStack.isOf(Items.TNT)) {
+            if (!this.getWorld().isClient) {
+                ItemStack previous = this.getBaboyHeldItem();
+                if (!previous.isEmpty()) {
+                    if (!player.getInventory().insertStack(previous.copy())) {
+                        player.dropItem(previous, false);
+                    }
+                }
+                this.setBaboyHeldItem(heldStack.copy());
+                player.setStackInHand(hand, ItemStack.EMPTY);
+            }
+            return ActionResult.SUCCESS;
+        }
+
         if (this.hasPassengers() || this.isBaby()) {
             return super.interactMob(player, hand);
         }
@@ -117,6 +144,11 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
         if (this.ownerUuid != null) {
             nbt.putUuid("Owner", this.ownerUuid);
         }
+        if (!this.getBaboyHeldItem().isEmpty()) {
+            ItemStack.CODEC.encodeStart(NbtOps.INSTANCE, this.getBaboyHeldItem())
+                    .result()
+                    .ifPresent(nbtElement -> nbt.put("HeldItem", nbtElement));
+        }
     }
 
     @Override
@@ -126,11 +158,37 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
         if (nbt.containsUuid("Owner")) {
             this.ownerUuid = nbt.getUuid("Owner");
         }
+        if (nbt.contains("HeldItem")) {
+            this.setBaboyHeldItem(
+                    ItemStack.CODEC.parse(NbtOps.INSTANCE, nbt.get("HeldItem"))
+                            .result()
+                            .orElse(ItemStack.EMPTY)
+            );
+        } else {
+            this.setBaboyHeldItem(ItemStack.EMPTY);
+        }
     }
 
     @Override
     protected boolean canAddPassenger(Entity passenger) {
         return !this.hasPassengers() && passenger instanceof PlayerEntity;
+    }
+
+    // tnt = mainhand item
+    @Override
+    public ItemStack getEquippedStack(EquipmentSlot slot) {
+        if (slot == EquipmentSlot.MAINHAND) {
+            return this.getBaboyHeldItem();
+        }
+        return super.getEquippedStack(slot);
+    }
+
+    public ItemStack getBaboyHeldItem() {
+        return this.dataTracker.get(BABOY_HELD_ITEM);
+    }
+
+    public void setBaboyHeldItem(ItemStack stack) {
+        this.dataTracker.set(BABOY_HELD_ITEM, stack);
     }
 
     @Nullable

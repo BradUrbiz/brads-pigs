@@ -7,11 +7,13 @@ import net.minecraft.client.render.entity.model.EntityModel;
 import net.minecraft.client.render.entity.model.EntityModelLayer;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.util.Identifier;
+import net.minecraft.util.Arm;
+import net.minecraft.client.render.entity.model.ModelWithArms;
 
 // Made with Blockbench 5.0.7
 // Exported for Minecraft version 1.17+ for Yarn
 // Paste this class into your mod and generate all required imports
-public class BaboyModel extends EntityModel<BaboyEntity> {
+public class BaboyModel extends EntityModel<BaboyEntity> implements ModelWithArms {
 	public static final EntityModelLayer LAYER_LOCATION =
 			new EntityModelLayer(Identifier.of("bradspigs", "baboy"), "main");
 
@@ -83,6 +85,12 @@ public class BaboyModel extends EntityModel<BaboyEntity> {
 
 	@Override
 	public void setAngles(BaboyEntity entity, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch) {
+	}
+
+	@Override
+	public void setArmAngle(Arm arm, MatrixStack matrices) {
+		ModelPart armPart = (arm == Arm.RIGHT) ? this.rightarm : this.leftarm;
+		armPart.rotate(matrices);
 	}
 
 	@Override

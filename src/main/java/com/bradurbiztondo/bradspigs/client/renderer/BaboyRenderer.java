@@ -9,11 +9,12 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.RotationAxis;
 import net.minecraft.client.util.math.MatrixStack;
 import net.minecraft.client.render.VertexConsumerProvider;
-
+import net.minecraft.client.render.entity.feature.HeldItemFeatureRenderer;
 
 public class BaboyRenderer extends MobEntityRenderer<BaboyEntity, BaboyModel> {
     public BaboyRenderer(EntityRendererFactory.Context context) {
         super(context, new BaboyModel(context.getPart(BaboyModel.LAYER_LOCATION)), 0.4f);
+        this.addFeature(new HeldItemFeatureRenderer<>(this, context.getHeldItemRenderer()));
     }
 
     @Override
