@@ -1,3 +1,5 @@
 {
-  "item.bradspigs.baboy_spawn_egg": "Baboy Spawn Egg"
+  "item.bradspigs.baboy_spawn_egg": "Baboy Spawn Egg",
+  "category.bradspigs.controls": "Brad's Pigs",
+  "key.bradspigs.throw_tnt": "Throw TNT"
 }
