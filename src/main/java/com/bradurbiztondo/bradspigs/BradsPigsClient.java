@@ -26,7 +26,7 @@ public class BradsPigsClient implements ClientModInitializer {
         KeyBinding throwTntKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.bradspigs.throw_tnt",
                 InputUtil.Type.KEYSYM,
-                GLFW.GLFW_KEY_F,
+                GLFW.GLFW_KEY_R,
                 "category.bradspigs.controls"));
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
