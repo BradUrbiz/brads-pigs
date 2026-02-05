@@ -10,6 +10,7 @@ import com.bradurbiztondo.bradspigs.registry.ModEntities;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.item.Items;
+import net.minecraft.item.ItemStack;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import com.bradurbiztondo.bradspigs.network.ThrowTntPayload;
@@ -34,7 +35,9 @@ public class BradsPigs implements ModInitializer {
 								&& baboy.getBaboyHeldItem().isOf(Items.TNT)
 								&& baboy.getBaboyHeldItem().getCount() >= 1) {
 							baboy.primeBaboyTnt(player);
-							baboy.getBaboyHeldItem().decrement(1);
+							ItemStack updated = baboy.getBaboyHeldItem().copy();
+							updated.decrement(1);
+							baboy.setBaboyHeldItem(updated.isEmpty() ? ItemStack.EMPTY : updated);
 						}
 					});
 				});
