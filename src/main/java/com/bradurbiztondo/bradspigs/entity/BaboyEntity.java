@@ -334,11 +334,20 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     // summon boom boom?!? bruh i hate naming convention like testCaseHere
     public void primeBaboyTnt(@Nullable LivingEntity igniter) {
         if (!this.getWorld().isClient) {
+            double spawnX = this.getX();
+            double spawnY = this.getY();
+            double spawnZ = this.getZ();
+            if (igniter != null) {
+                var look = igniter.getRotationVec(1.0F);
+                spawnX = igniter.getX() + (look.x * 12.0);
+                spawnY = igniter.getEyeY() - 2.0;
+                spawnZ = igniter.getZ() + (look.z * 12.0);
+            }
             TntEntity tntEntity = new TntEntity(
                     this.getWorld(),
-                    this.getX(),
-                    this.getY(),
-                    this.getZ(),
+                    spawnX,
+                    spawnY,
+                    spawnZ,
                     igniter
             );
             this.getWorld().spawnEntity(tntEntity);
