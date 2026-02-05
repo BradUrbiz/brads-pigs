@@ -35,6 +35,10 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.entity.TntEntity;
+import net.minecraft.world.event.GameEvent;
+import net.minecraft.sound.SoundCategory;
+import net.minecraft.sound.SoundEvents;
 
 public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMount {
 
@@ -327,12 +331,34 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
                 .add(EntityAttributes.GENERIC_MOVEMENT_SPEED, 0.25);
     }
 
+    // summon boom boom?!? bruh i hate naming convention like testCaseHere
+    public void primeBaboyTnt(@Nullable LivingEntity igniter) {
+        if (!this.getWorld().isClient) {
+            TntEntity tntEntity = new TntEntity(
+                    this.getWorld(),
+                    this.getX(),
+                    this.getY(),
+                    this.getZ(),
+                    igniter
+            );
+            this.getWorld().spawnEntity(tntEntity);
+            this.getWorld().playSound(null, tntEntity.getX(), tntEntity.getY(), tntEntity.getZ(),
+                    SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.BLOCKS, 1.0F, 1.0F);
+            this.getWorld().emitGameEvent(igniter, GameEvent.PRIME_FUSE, this.getBlockPos());
+        }
+    }
+
+
+
+
     @Override
     protected void initGoals() {
         this.goalSelector.add(0,new SwimGoal(this));
         this.goalSelector.add(1,new WanderAroundFarGoal(this, 1.0));
         this.goalSelector.add(2,new LookAtEntityGoal(this, PlayerEntity.class, 6.0F));
         this.goalSelector.add(3,new LookAroundGoal(this));
+
+
 
     }
 

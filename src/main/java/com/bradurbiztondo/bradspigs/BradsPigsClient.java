@@ -20,6 +20,13 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import org.lwjgl.glfw.GLFW;
 
+import com.bradurbiztondo.bradspigs.entity.BaboyEntity;
+import net.minecraft.item.Items;
+import net.minecraft.network.PacketByteBuf;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
+import com.bradurbiztondo.bradspigs.network.ThrowTntPayload;
+
 public class BradsPigsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
@@ -36,13 +43,7 @@ public class BradsPigsClient implements ClientModInitializer {
             if (client.player == null) return;
 
             while (throwTntKey.wasPressed()) {
-                if (client.player.getVehicle() instanceof BaboyEntity baboy
-                    && baboy.isTame()
-                    && baboy.getBaboyHeldItem().isOf(Items.TNT)
-                    && baboy.getBaboyHeldItem().getCount() > 0) {
-                    client.player.sendMessage(Text.literal("Clicked R"), false);
-                }
-
+                ClientPlayNetworking.send(new ThrowTntPayload());
             }
         });
     }
