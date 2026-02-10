@@ -33,7 +33,7 @@ public class BradsPigs implements ModInitializer {
 								&& baboy.isTame()
 								&& baboy.getBaboyHeldItem().isOf(Items.TNT)
 								&& baboy.getBaboyHeldItem().getCount() >= 1) {
-							baboy.primeBaboyTnt(player);
+							baboy.tryPrimeBaboyTnt(player);
 						}
 					});
 				});
