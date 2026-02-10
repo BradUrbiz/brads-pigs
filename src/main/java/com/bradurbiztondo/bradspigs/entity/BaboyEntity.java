@@ -39,6 +39,8 @@ import net.minecraft.entity.TntEntity;
 import net.minecraft.world.event.GameEvent;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
+import net.minecraft.util.math.BlockPos;
+import net.minecraft.world.Heightmap;
 
 public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMount {
 
@@ -246,10 +248,17 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     // bro has larger capacity until fall damage cooks him
     private static final float EXTRA_SAFE_FALL_DISTANCE = 5.0F;
 
+    // tnt cooldown
+    private static final int TNT_COOLDOWN_TICKS = 60;
+    private int tntCooldownTicks = 0;
 
     @Override
     protected void mobTick() {
         super.mobTick();
+
+        if (tntCooldownTicks > 0) {
+            tntCooldownTicks--;
+        }
 
         if(this.getWorld().isClient) {
             return;
@@ -334,11 +343,19 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     // summon boom boom?!? bruh i hate naming convention like testCaseHere
     public void primeBaboyTnt(@Nullable LivingEntity igniter) {
         if (!this.getWorld().isClient) {
+            Vec3d forward = this.getRotationVector();
+            double spawnX = this.getX() + forward.x * 12.0;
+            double spawnZ = this.getZ() + forward.z * 12.0;
+            BlockPos surface = this.getWorld().getTopPosition(
+                    Heightmap.Type.MOTION_BLOCKING_NO_LEAVES,
+                    BlockPos.ofFloored(spawnX, this.getY(), spawnZ)
+            );
+            double spawnY = surface.getY() + 1.0;
             TntEntity tntEntity = new TntEntity(
                     this.getWorld(),
-                    this.getX(),
-                    this.getY(),
-                    this.getZ(),
+                    spawnX,
+                    spawnY,
+                    spawnZ,
                     igniter
             );
             this.getWorld().spawnEntity(tntEntity);
@@ -348,7 +365,13 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
         }
     }
 
-
+    public void tryPrimeBaboyTnt(@Nullable LivingEntity igniter) {
+        if (this.getWorld().isClient || tntCooldownTicks > 0) {
+            return;
+        }
+        primeBaboyTnt(igniter);
+        tntCooldownTicks = TNT_COOLDOWN_TICKS;
+    }
 
 
     @Override
