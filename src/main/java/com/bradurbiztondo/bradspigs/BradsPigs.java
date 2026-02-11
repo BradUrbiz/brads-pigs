@@ -13,6 +13,7 @@ import net.minecraft.item.Items;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import com.bradurbiztondo.bradspigs.network.ThrowTntPayload;
+import com.bradurbiztondo.bradspigs.network.SummonMegaFartPayload;
 
 public class BradsPigs implements ModInitializer {
 	public static final String MOD_ID = "bradspigs";
@@ -21,6 +22,7 @@ public class BradsPigs implements ModInitializer {
 	@Override
 	public void onInitialize() {
 		PayloadTypeRegistry.playC2S().register(ThrowTntPayload.ID, ThrowTntPayload.CODEC);
+		PayloadTypeRegistry.playC2S().register(SummonMegaFartPayload.ID, SummonMegaFartPayload.CODEC);
 		ModEntities.init();
 		ModItems.init();
 		FabricDefaultAttributeRegistry.register(ModEntities.BABOY, BaboyEntity.createBaboyAttributes());
@@ -34,6 +36,16 @@ public class BradsPigs implements ModInitializer {
 								&& baboy.getBaboyHeldItem().isOf(Items.TNT)
 								&& baboy.getBaboyHeldItem().getCount() >= 1) {
 							baboy.tryPrimeBaboyTnt(player);
+						}
+					});
+				});
+		ServerPlayNetworking.registerGlobalReceiver(SummonMegaFartPayload.ID,
+				(payload, context) -> {
+					context.server().execute(() -> {
+						var player = context.player();
+						if (player.getVehicle() instanceof BaboyEntity baboy
+								&& baboy.isTame()) {
+							baboy.trySummonPoisonCloud(player);
 						}
 					});
 				});

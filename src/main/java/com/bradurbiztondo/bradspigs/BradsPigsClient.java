@@ -26,6 +26,7 @@ import net.minecraft.network.PacketByteBuf;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import com.bradurbiztondo.bradspigs.network.ThrowTntPayload;
+import com.bradurbiztondo.bradspigs.network.SummonMegaFartPayload;
 
 public class BradsPigsClient implements ClientModInitializer {
     @Override
@@ -39,11 +40,21 @@ public class BradsPigsClient implements ClientModInitializer {
                 GLFW.GLFW_KEY_R,
                 "category.bradspigs.controls"));
 
+        KeyBinding megaFartKey = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.bradspigs.mega_fart",
+                InputUtil.Type.KEYSYM,
+                GLFW.GLFW_KEY_V,
+                "category.bradspigs.controls"));
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (client.player == null) return;
 
             while (throwTntKey.wasPressed()) {
                 ClientPlayNetworking.send(new ThrowTntPayload());
+            }
+
+            while (megaFartKey.wasPressed()) {
+                ClientPlayNetworking.send(new SummonMegaFartPayload());
             }
         });
     }

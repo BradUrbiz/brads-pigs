@@ -41,6 +41,9 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.Heightmap;
+import net.minecraft.entity.AreaEffectCloudEntity;
+import net.minecraft.potion.Potions;
+import net.minecraft.component.type.PotionContentsComponent;
 
 public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMount {
 
@@ -251,6 +254,9 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
     // tnt cooldown
     private static final int TNT_COOLDOWN_TICKS = 60;
     private int tntCooldownTicks = 0;
+    // poison cloud cooldown
+    private static final int MEGA_FART_COOLDOWN_TICKS = 60;
+    private int megaFartCooldownTicks = 0;
 
     @Override
     protected void mobTick() {
@@ -258,6 +264,9 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
 
         if (tntCooldownTicks > 0) {
             tntCooldownTicks--;
+        }
+        if (megaFartCooldownTicks > 0) {
+            megaFartCooldownTicks--;
         }
 
         if(this.getWorld().isClient) {
@@ -373,6 +382,26 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
         tntCooldownTicks = TNT_COOLDOWN_TICKS;
     }
 
+    public void summonPoisonCloud(@Nullable LivingEntity owner) {
+        if (!this.getWorld().isClient) {
+            AreaEffectCloudEntity cloud = new AreaEffectCloudEntity(this.getWorld(),
+                    this.getX(), this.getY(), this.getZ());
+            cloud.setOwner(owner);
+            cloud.setRadius(3.0F);
+            cloud.setDuration(100);
+            cloud.setWaitTime(0);
+            cloud.setPotionContents(new PotionContentsComponent(Potions.POISON));
+            this.getWorld().spawnEntity(cloud);
+        }
+    }
+
+    public void trySummonPoisonCloud(@Nullable LivingEntity owner) {
+        if (this.getWorld().isClient || megaFartCooldownTicks > 0) {
+            return;
+        }
+        summonPoisonCloud(owner);
+        megaFartCooldownTicks = MEGA_FART_COOLDOWN_TICKS;
+    }
 
     @Override
     protected void initGoals() {
