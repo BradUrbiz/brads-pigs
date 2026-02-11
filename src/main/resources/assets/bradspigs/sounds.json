@@ -1,0 +1,26 @@
+{
+  "baboy_tnt": {
+    "sounds": [
+      {
+        "name": "bradspigs:baboy_tnt",
+        "volume": 0.67
+      }
+    ]
+  },
+  "baboy_mega_fart": {
+    "sounds": [
+      {
+        "name": "bradspigs:baboy_mega_fart",
+        "volume": 0.30
+      }
+    ]
+  },
+  "baboy_walk": {
+    "sounds": [
+      {
+        "name": "bradspigs:baboy_walk",
+        "volume": 0.41
+      }
+    ]
+  }
+}

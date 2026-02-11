@@ -44,6 +44,8 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.entity.AreaEffectCloudEntity;
 import net.minecraft.potion.Potions;
 import net.minecraft.component.type.PotionContentsComponent;
+import net.minecraft.block.BlockState;
+import com.bradurbiztondo.bradspigs.registry.ModSounds;
 
 public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMount {
 
@@ -370,6 +372,8 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
             this.getWorld().spawnEntity(tntEntity);
             this.getWorld().playSound(null, tntEntity.getX(), tntEntity.getY(), tntEntity.getZ(),
                     SoundEvents.ENTITY_TNT_PRIMED, SoundCategory.BLOCKS, 1.0F, 1.0F);
+            this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    ModSounds.BABOY_TNT, SoundCategory.NEUTRAL, 0.6F, 1.0F);
             this.getWorld().emitGameEvent(igniter, GameEvent.PRIME_FUSE, this.getBlockPos());
         }
     }
@@ -392,6 +396,8 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
             cloud.setWaitTime(0);
             cloud.setPotionContents(new PotionContentsComponent(Potions.POISON));
             this.getWorld().spawnEntity(cloud);
+            this.getWorld().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    ModSounds.BABOY_MEGA_FART, SoundCategory.NEUTRAL, 0.35F, 1.0F);
         }
     }
 
@@ -414,4 +420,7 @@ public class BaboyEntity extends PathAwareEntity implements Tameable, JumpingMou
 
     }
 
+    @Override
+    protected void playStepSound(BlockPos pos, BlockState state) {
+    }
 }

@@ -10,6 +10,7 @@ import com.bradurbiztondo.bradspigs.registry.ModEntities;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.item.Items;
+import com.bradurbiztondo.bradspigs.registry.ModSounds;
 
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import com.bradurbiztondo.bradspigs.network.ThrowTntPayload;
@@ -25,6 +26,7 @@ public class BradsPigs implements ModInitializer {
 		PayloadTypeRegistry.playC2S().register(SummonMegaFartPayload.ID, SummonMegaFartPayload.CODEC);
 		ModEntities.init();
 		ModItems.init();
+		ModSounds.init();
 		FabricDefaultAttributeRegistry.register(ModEntities.BABOY, BaboyEntity.createBaboyAttributes());
 
 		ServerPlayNetworking.registerGlobalReceiver(ThrowTntPayload.ID,

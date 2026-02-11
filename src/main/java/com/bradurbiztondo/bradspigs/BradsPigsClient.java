@@ -2,6 +2,7 @@ package com.bradurbiztondo.bradspigs;
 
 import com.bradurbiztondo.bradspigs.client.model.BaboyModel;
 import com.bradurbiztondo.bradspigs.client.renderer.BaboyRenderer;
+import com.bradurbiztondo.bradspigs.client.sound.BaboyWalkSoundInstance;
 import com.bradurbiztondo.bradspigs.registry.ModEntities;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityModelLayerRegistry;
@@ -27,8 +28,15 @@ import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.networking.v1.PacketByteBufs;
 import com.bradurbiztondo.bradspigs.network.ThrowTntPayload;
 import com.bradurbiztondo.bradspigs.network.SummonMegaFartPayload;
+import net.minecraft.util.math.Box;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 public class BradsPigsClient implements ClientModInitializer {
+    private static final double BABOY_SOUND_RANGE = 64.0;
+    private static final Map<UUID, BaboyWalkSoundInstance> BABOY_WALK_SOUNDS = new HashMap<>();
+
     @Override
     public void onInitializeClient() {
         EntityRendererRegistry.register(ModEntities.BABOY, BaboyRenderer::new);
@@ -56,6 +64,33 @@ public class BradsPigsClient implements ClientModInitializer {
             while (megaFartKey.wasPressed()) {
                 ClientPlayNetworking.send(new SummonMegaFartPayload());
             }
+
+            if (client.world == null) return;
+            Box searchBox = client.player.getBoundingBox().expand(BABOY_SOUND_RANGE);
+            var baboys = client.world.getEntitiesByClass(BaboyEntity.class, searchBox, baboy -> true);
+            Map<UUID, BaboyEntity> inRange = new HashMap<>();
+            for (BaboyEntity baboy : baboys) {
+                inRange.put(baboy.getUuid(), baboy);
+                boolean isMoving = BaboyWalkSoundInstance.isBaboyMoving(baboy);
+                boolean isPlaying = BABOY_WALK_SOUNDS.containsKey(baboy.getUuid());
+                if (isMoving && !isPlaying) {
+                    BaboyWalkSoundInstance instance = new BaboyWalkSoundInstance(baboy);
+                    BABOY_WALK_SOUNDS.put(baboy.getUuid(), instance);
+                    client.getSoundManager().play(instance);
+                } else if (!isMoving && isPlaying) {
+                    BABOY_WALK_SOUNDS.get(baboy.getUuid()).stop();
+                    BABOY_WALK_SOUNDS.remove(baboy.getUuid());
+                }
+            }
+
+            BABOY_WALK_SOUNDS.entrySet().removeIf(entry -> {
+                BaboyEntity baboy = inRange.get(entry.getKey());
+                if (baboy == null || baboy.isRemoved() || !BaboyWalkSoundInstance.isBaboyMoving(baboy)) {
+                    entry.getValue().stop();
+                    return true;
+                }
+                return false;
+            });
         });
     }
 }
